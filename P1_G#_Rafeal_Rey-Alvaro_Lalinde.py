@@ -1,10 +1,43 @@
 #AUTORES: Rafael Rey & Alvaro Lalinde
 
-#AUTORES: Rafael Rey & Alvaro Lalinde
-
 from sklearn import datasets
 import numpy as np
 import functools
+
+# Metodo sacartuplas: 
+# Funcion: elimina las columnas de X_train y X_test que no aporten demasiada informacion(varianza<0.5)
+#          tambien elimina datos de la columna eliminada de varianza, media, mediana, IQR y desviacion típica
+# Parametros que recibe: X_train, X_test, varianza, media, mediana, IQR y desviacion_tipica
+# Devuelve: X_train, X_test, varianza, media, mediana, IQR y desviacion_tipica modificados
+def sacartuplas(X_train, X_test, varianza, media, mediana, IQR, desviacion_tipica):
+    for tuplasI, tuplas in reversed(list(enumerate(varianza))):
+        if tuplas<0.5:
+            X_train = np.delete(X_train, tuplasI, axis=1)
+            X_test = np.delete(X_test, tuplasI, axis=1)
+            varianza=np.delete(varianza,tuplasI)
+            mediana= np.delete(mediana, tuplasI)
+            media= np.delete(media, tuplasI)
+            IQR= np.delete(IQR, tuplasI)
+            desviacion_tipica= np.delete(desviacion_tipica, tuplasI)
+            print("Eliminamos variable(feature selection)")
+    return X_train, X_test, varianza, media, mediana, IQR, desviacion_tipica
+
+# Metodo sacartuplas: 
+# Funcion: elimina las columnas de X_train y X_test que no aporten demasiada informacion(varianza<0.5)
+#          tambien elimina datos de la columna eliminada de varianza, media, mediana, IQR y desviacion típica
+# Parametros que recibe: X_train, X_test, varianza, media, mediana, IQR y desviacion_tipica
+# Devuelve: X_train, X_test, varianza, media, mediana, IQR y desviacion_tipica modificados
+def sacartuplas(X_train, X_test, varianza, media, mediana, IQR, desviacion_tipica):
+    for tuplasI, tuplas in reversed(list(enumerate(varianza))):
+        if tuplas<0.5:
+            X_train = np.delete(X_train, tuplasI, axis=1)
+            X_test = np.delete(X_test, tuplasI, axis=1)
+            varianza=np.delete(varianza,tuplasI)
+            mediana= np.delete(mediana, tuplasI)
+            media= np.delete(media, tuplasI)
+            IQR= np.delete(IQR, tuplasI)
+            desviacion_tipica= np.delete(desviacion_tipica, tuplasI)
+    return X_train, X_test, varianza, media, mediana, IQR, desviacion_tipica
 
 
 # Metodo normalizacionX: 
@@ -17,7 +50,7 @@ def normalizacionX(datos,mediana,IQR,media, desviaciontipica):
     def normalizarConValoresAtipicos(x): return (x-mediana)/IQR
     #Normalizacion estandar, se realiza con la media y la desviacion típica
     def normalizarConMedia(x):return (x-media)/desviaciontipica
-    datos= np.array(list(map(normalizarConMedia, datos)))
+    datos= np.array(list(map(normalizarConValoresAtipicos, datos)))
 
     return(datos)
 
@@ -49,25 +82,28 @@ def calcularthetas(X_train,y_train,alpha,th0,th,h):
         
     return th0, th
 # Metodo eliminarRuido: 
-# Funcion: Elimina las tuplas que coonsidera como ruido para una mejor aproximacion
+# Funcion: Elimina las tuplas en las que tengamos ruido  para una mejor aproximacion
 # Parametros que recibe: Dataset de entradas, array de salidas, array con los valores 
 #  de la desviacion tipica, array con los valores de la media
 # Devuelve: Dataset modificado
-def eliminarRuido(datosX, datosY, desviacion_tipica, mediana):
+def eliminarRuido(datosX, datosY, IQR, mediana):
+    
+    ruidoeliminado=0
     for tuplasI, tuplas in reversed(list(enumerate(datosX))):
         valores_ruidosos=0
         for iteracionI, iteracion in enumerate(tuplas):
-            max = mediana[iteracionI]+ desviacion_tipica[iteracionI]* 1.5
-            min = mediana[iteracionI] - desviacion_tipica[iteracionI] * 1.5
+            max = mediana[iteracionI]+ IQR[iteracionI] *1.5
+            min = mediana[iteracionI] - IQR[iteracionI] *1.5
             
             if iteracion>max or iteracion<min:
                 valores_ruidosos=valores_ruidosos+1
+        
 
-        if valores_ruidosos > 3:
-            print("Eliminamos")
+        if valores_ruidosos >=1 :
             datosX=np.delete(datosX, tuplasI, axis=0)
             datosY=np.delete(datosY, tuplasI)
-        
+            ruidoeliminado=ruidoeliminado+1
+    print(ruidoeliminado,"Tuplas de ruido eliminadas")
             
             
     return datosX, datosY
@@ -107,7 +143,7 @@ class Preprocessor(object):
         Devuelve el conjunto de datos X e y transformado
         '''
         #TODO
-        X_train, y_train = eliminarRuido(X_train, y_train, self.desviacion_tipica, self.mediana)
+        X_train, y_train = eliminarRuido(X_train, y_train, self.IQR, self.mediana)
         
         X_train = normalizacionX(X_train,self.mediana,self.IQR,self.media,self.desviacion_tipica)
         X_test = normalizacionX(X_test,self.mediana,self.IQR,self.media,self.desviacion_tipica)
@@ -193,12 +229,13 @@ class GradientDescent(object):
 
 if __name__ == "__main__":
     
-    np.random.seed(1)
+    np.random.seed()
     X, y = datasets.load_diabetes(return_X_y=True)
      #Dividimos los datos en X_train, y_train, X_test y y_train   
     msk = np.random.rand(len(X)) >= 0.25
-    print(len(y))
-    print(len(y[msk]))
+    print("Tamaño del dataset",len(y))
+    print("Tamaño del train",len(y[msk]))
+    print("Tamaño del test",len(y[~msk]))
     X_train = X[msk]
     y_train = y[msk]
     
@@ -209,15 +246,12 @@ if __name__ == "__main__":
     #TODO
     modelo = Preprocessor()
     modelo.fit(X_train) 
-    print(len(y_train))
-    print(len(X_train))
+    
+    print("Tamaño antes de transformar(tuplas,Variables):",len(X_train),", ",len(X_train.T))
     X_train, X_test, y_train=modelo.transform(X_train, X_test, y_train)
-    print(len(y_train))
-    print(len(X_train))
+    print("Tamaño despues de transformar(tuplas,Variables):",len(X_train),", ",len(X_train.T))
+    
    
-
-    
-    
     # Creación y entrenamiento del modelo de descenso de gradiente
     #TODO 
     modelo = GradientDescent(0.02)
@@ -225,5 +259,5 @@ if __name__ == "__main__":
 
     # Impresion del error cuadratico medio obtenido con el modelo
     #TODO
-    print("ERROR")
+    print("ERROR:")
     print(modelo.mse(X_test, y_test))
