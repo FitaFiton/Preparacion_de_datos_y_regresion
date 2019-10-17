@@ -6,7 +6,7 @@ import functools
 
 # Metodo sacartuplas:
 # Funcion: elimina las variables de X_train y X_test que no aporten demasiada informacion(varianza<0.5)
-#          tambien elimina datos de la variable eliminada de varianza, media, mediana, IQR y desviacion típica
+#          tambien elimina datos de varianza, media, mediana, IQR y desviacion típica de la variable.
 # Parametros que recibe: X_train, X_test, varianza, media, mediana, IQR y desviacion_tipica
 # Devuelve: X_train, X_test, varianza, media, mediana, IQR y desviacion_tipica modificados
 def sacartuplas(X_train, X_test, varianza, media, mediana, IQR, desviacion_tipica):
